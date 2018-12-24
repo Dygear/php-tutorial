@@ -2,7 +2,7 @@
 
 The purpose of this guide is to walk through the process of creating a simple PHP app that retrieves messages in Office 365 or Outlook.com. The source code in this repository is what you should end up with if you follow the steps outlined here.
 
-This tutorial will use [cURL](http://php.net/manual/en/book.curl.php) to send oAuth2 and REST API calls.
+This tutorial will use [file_get_contents()](http://php.net/file_get_contents) along with [stream_context_create()](http://php.net/manual/en/function.stream-context-create.php) to send oAuth2 and REST API calls via [HTTP Context](http://php.net/manual/en/context.http.php).
 
 ## Before you begin ##
 
@@ -34,20 +34,13 @@ session_start();
 <title>PHP Mail API Tutorial</title>
 </head>
   <body>
-  <?php 
-      if (!$loggedIn) {
-  ?>
+<?php if (!$loggedIn): ?>
   <!-- User not logged in, prompt for login -->
       <p>Please <a href="#">sign in</a> with your Office 365 or Outlook.com account.</p>
-  <?php
-    }
-      else {
-  ?>
+<?php else: ?>
   <!-- User is logged in, do something here -->
       <p>Hello user!</p>
-  <?php
-    }
-  ?>
+<?php endif; ?>
   </body>
 </html>
 ```
@@ -125,20 +118,13 @@ The class exposes one function for now, `getLoginUrl`. This function will genera
       <title>PHP Mail API Tutorial</title>
   </head>
   <body>
-    <?php 
-      if (!$loggedIn) {
-    ?>
+<?php if (!$loggedIn): ?>
       <!-- User not logged in, prompt for login -->
       <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
-    <?php
-      }
-      else {
-    ?>
+<?php else: ?>
       <!-- User is logged in, do something here -->
       <p>Hello user!</p>
-    <?php    
-      }
-    ?>
+<?php endif; ?>
   </body>
 </html>
 ```
@@ -159,7 +145,7 @@ Create the `authorize.php` file and add the following code.
   $auth_code = $_GET['code'];
 ?>
 
-<p>Auth code: <?php echo $auth_code ?></p>
+<p>Auth code: <?=$auth_code?></p>
 ```
 
 This doesn't do anything but display the authorization code returned by Azure, but it will let us test that we can successfully log in. Now if you sign in to the app, you should end up with a page that shows the authorization code. Now let's do something with it.
@@ -609,21 +595,14 @@ Update `./home.php` to call the `getMessages` function and display the results.
     <title>PHP Mail API Tutorial</title>
   </head>
   <body>
-    <?php 
-      if (!$loggedIn) {
-    ?>
+<?php if (!$loggedIn): ?>
       <!-- User not logged in, prompt for login -->
       <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
-    <?php
-      }
-      else {
-        $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']);
-    ?>
+<?php else: ?>
+<?php   $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']); ?>
       <!-- User is logged in, do something here -->
       <p>Messages: <?php echo print_r($messages) ?></p>
-    <?php    
-      }
-    ?>
+<?php endif; ?>
   </body>
 </html>
 ```
@@ -645,7 +624,7 @@ Update `./home.php` one final time to generate the table.
   require('outlook.php');
   
   $loggedIn = !is_null($_SESSION['access_token']);
-    $redirectUri = 'http://localhost/php-tutorial/authorize.php';
+  $redirectUri = 'http://localhost/php-tutorial/authorize.php';
 ?>
 
 <html>
@@ -653,37 +632,28 @@ Update `./home.php` one final time to generate the table.
   <title>PHP Mail API Tutorial</title>
   </head>
   <body>
-    <?php 
-      if (!$loggedIn) {
-    ?>
+<?php if (!$loggedIn): ?>
       <!-- User not logged in, prompt for login -->
       <p>Please <a href="<?php echo oAuthService::getLoginUrl($redirectUri)?>">sign in</a> with your Office 365 or Outlook.com account.</p>
-    <?php
-      }
-      else {
-        $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']);
-    ?>
+<?php else: ?>
+<?php   $messages = OutlookService::getMessages(oAuthService::getAccessToken($redirectUri), $_SESSION['user_email']); ?>
       <!-- User is logged in, do something here -->
       <h2>Your messages</h2>
-      
       <table>
         <tr>
           <th>From</th>
           <th>Subject</th>
           <th>Received</th>
         </tr>
-        
-        <?php foreach($messages['value'] as $message) { ?>
+<?php   foreach($messages['value'] as $message): ?>
           <tr>
             <td><?php echo $message['From']['EmailAddress']['Name'] ?></td>
             <td><?php echo $message['Subject'] ?></td>
             <td><?php echo $message['ReceivedDateTime'] ?></td>
           </tr>
-        <?php } ?>
+<?php   endforeach; ?>
       </table>
-    <?php    
-      }
-    ?>
+<?php endif; ?>
   </body>
 </html>
 ```
